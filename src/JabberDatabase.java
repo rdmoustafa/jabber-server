@@ -253,17 +253,19 @@ public class JabberDatabase {
      * TODO will need to include adding a password to the user
      * This method adds a new user to the platform.
      * @param username the username of the new user.
+     * @param password the password of the new user.
      * @param emailadd the email address of the new user.
      */
-    public void addUser(String username, String emailadd) {
+    public void addUser(String username, String password, String emailadd) {
         int newid = getNextUserID();
 
         try {
-            PreparedStatement stmt = conn.prepareStatement("insert into jabberuser (values(?,?,?))");
+            PreparedStatement stmt = conn.prepareStatement("insert into jabberuser (values(?,?,?,?))");
 
             stmt.setInt(1, newid);
             stmt.setString(2, username);
-            stmt.setString(3, emailadd);
+            stmt.setString(3, password);
+            stmt.setString(4, emailadd);
 
             stmt.executeUpdate();
 
@@ -399,11 +401,10 @@ public class JabberDatabase {
      * @return next available user ID
      */
     private int getNextUserID() {
-
-        String query = "select max(userid) from jabberuser";
         int maxid = -1;
 
-        try (PreparedStatement stmt = conn.prepareStatement(query)) {
+        try {
+            PreparedStatement stmt = conn.prepareStatement("select max(userid) from jabberuser");
             ResultSet rs = stmt.executeQuery();
 
             while (rs.next()) { maxid = rs.getInt(1); }
@@ -413,6 +414,23 @@ public class JabberDatabase {
         if (maxid < 0) return maxid;
 
         return maxid + 1;
+    }
+
+    /**
+     * Gets the password of the given user
+     * @param username user trying to log in
+     * @return password associated with their account
+     */
+    public String getUserPW(String username) {
+        String userPW = "";
+        try {
+            PreparedStatement stmt = conn.prepareStatement("select password from jabberuser where username = ?");
+            stmt.setString(1, username);
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) { userPW = rs.getString("password"); }
+        }
+        catch (SQLException throwables) { throwables.printStackTrace(); }
+        return userPW;
     }
 
     /**

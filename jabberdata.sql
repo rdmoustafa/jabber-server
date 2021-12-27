@@ -1,17 +1,17 @@
 insert into jabberuser (
-    values (0, 'donaldJtrump', 'donald@donald.com'),
-    (1, 'kim','kim@kanye.com'),
-    (2, 'DavidBowie','david@bowienet.com'),
-  (3, 'HackerTDog','hackert@dog.com'),
-  (4, 'robertsmith', 'rob@thecure.com'),
-  (5, 'klopp', 'manager@anfield.com'),
-  (6, 'percy', 'ppig@marksandspencer.net'),
-  (7, 'cyborg', 'cyborg@teentitansgo.com'),
-  (8, 'icebear', 'iceb@wbb.com'),
-  (9, 'solesurvivor', 'sole@vault111.com'),
-  (10, 'ellie', 'ellie@lastofus.com'),
-  (11, 'jumpman', 'jumpmanmario@marioworld.net'),
-  (12, 'edballs', 'ed@edballs.com')
+    values (0, 'donaldJtrump', 'imnotorange', 'donald@donald.com'),
+           (1, 'kim', 'kanyeisgreat', 'kim@kanye.com'),
+           (2, 'DavidBowie', 'davidB', 'david@bowienet.com'),
+           (3, 'HackerTDog', 'whatsupdawg', 'hackert@dog.com'),
+           (4, 'robertsmith', 'robbie', 'rob@thecure.com'),
+           (5, 'klopp', 'ploop', 'manager@anfield.com'),
+           (6, 'percy', 'jackson', 'ppig@marksandspencer.net'),
+           (7, 'cyborg', 'ttgo', 'cyborg@teentitansgo.com'),
+           (8, 'icebear', 'brownbear', 'iceb@wbb.com'),
+           (9, 'solesurvivor', 'onlyone', 'sole@vault111.com'),
+           (10, 'ellie', 'lastofus', 'ellie@lastofus.com'),
+           (11, 'jumpman', 'supermario', 'jumpmanmario@marioworld.net'),
+           (12, 'edballs', 'eddie', 'ed@edballs.com')
 );
 
 insert into jab(

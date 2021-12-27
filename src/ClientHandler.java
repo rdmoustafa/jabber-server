@@ -1,6 +1,7 @@
 import java.io.*;
 import java.net.Socket;
 import java.util.ArrayList;
+// FIXME get rid of EOF exception - you need to do .close() somewhere
 
 public class ClientHandler extends Thread {
     private final JabberDatabase db;
@@ -15,7 +16,7 @@ public class ClientHandler extends Thread {
     public int getUserID() { return userID; }
 
     //mutators
-    public void setUser(final String username) { user = username; }
+    public void setUser(final String username) { user = username.toLowerCase(); }
     public void setUserID(final int ID) { userID = ID; }
 
     //constructor
@@ -55,8 +56,8 @@ public class ClientHandler extends Thread {
 
                 //separate the command 'post' from the jab text
                 switch (command) {
-                    case "signin" -> SignIn(info);
-                    case "register" -> RegisterUser(info);
+                    case "signin" -> SignIn(info, message[2]);
+                    case "register" -> RegisterUser(info, message[2]);
                     case "signout" -> SignOut();
                     case "timeline" -> Timeline();
                     case "users" -> UsersToFollow();
@@ -76,7 +77,10 @@ public class ClientHandler extends Thread {
         }
         catch (IOException | ClassNotFoundException e) { e.printStackTrace(); }
         finally {
-            try { clientSocket.close(); }
+            try {
+                clientSocket.close();
+                forClient.flush();
+            }
             catch (IOException e) { e.printStackTrace(); }
         }
     }
@@ -93,6 +97,7 @@ public class ClientHandler extends Thread {
     }
 
     /**
+     * TODO add a check for if it's been liked before or not
      * Adds a like on the input jab by the logged in user
      * @param jabIDasString the jab ID which is to be liked given as a string rather than an int
      */
@@ -143,15 +148,17 @@ public class ClientHandler extends Thread {
     }
 
     /**
-     * TODO implement asking for a password
+     * TODO implement a password check to make sure it satisfies some requirements ie. 8 letters long
+     * TODO if the username already exists they shouldn't be able to register with it
      * Adds the user's username to the database and logs them in.
      * The log in takes the form of initializing the global variables user and userID
      * @param username the username to be added to the database
+     * @param password the password to be added to the database
      */
-    private void RegisterUser(final String username) throws IOException {
+    private void RegisterUser(final String username, final String password) throws IOException {
         //add user to the database
         String email = username + "@gmail.com"; //create user email
-        db.addUser(username, email); //add user to the database
+        db.addUser(username, password, email); //add user to the database
 
         //initialize global variables
         setUser(username);
@@ -162,20 +169,22 @@ public class ClientHandler extends Thread {
     }
 
     /**
-     * TODO implement a password check
      * Logs the user in. The log in takes the form of initializing the global variables user and userID.
      * If the username is invalid, the server doesn't log the client in
      * @param username the username to be checked in the database
      */
-    private void SignIn(final String username) throws IOException {
+    private void SignIn(final String username, final String password) throws IOException {
         final int ID = db.getUserID(username); //get the userid from the database
-
         if (ID == -1) forClient.writeObject(new JabberMessage("unknown-user"));
         else {
-            //initialize global variables
-            setUser(username);
-            setUserID(ID);
-            forClient.writeObject(new JabberMessage("signedin"));
+            final String realPassword = db.getUserPW(username);
+            if (password.equals(realPassword)) {
+                //initialize global variables
+                setUser(username);
+                setUserID(ID);
+                forClient.writeObject(new JabberMessage("signedin"));
+            }
+            else forClient.writeObject(new JabberMessage("incorrect-password"));
         }
         forClient.flush();
     }
