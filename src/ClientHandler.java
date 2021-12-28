@@ -38,31 +38,28 @@ public class ClientHandler extends Thread {
 
                 JabberMessage msg = (JabberMessage) fromClient.readObject();
 
-                String ClientMsg = msg.getMessage();
+                String clientMsg = msg.getMessage();
+                ArrayList<ArrayList<String>> clientData = msg.getData();
 
                 String[] message = new String[0];
                 final String command;
                 final String info;
 
                 // if message is longer than one word
-                if (ClientMsg.contains(" ")) {
-                    message = ClientMsg.split(" "); //split the client's massage into strings
+                if (clientMsg.contains(" ")) {
+                    message = clientMsg.split(" "); //split the client's massage into strings
                     command = message[0]; //save the command
                     info = message[1]; //save the information provided
                 }
                 else {
-                    command = ClientMsg;
+                    command = clientMsg;
                     info = null;
                 }
 
                 //separate the command 'post' from the jab text
                 switch (command) {
                     case "signin" -> SignIn(info, message[2]);
-                    case "register" -> {
-                        StringBuilder possiblePassword = new StringBuilder();
-                        for (int i = 1; i < message.length; i++) possiblePassword.append(message[i]).append(" ");
-                        RegisterUser(info, possiblePassword.toString());
-                    }
+                    case "register" -> RegisterUser(clientData.get(0).get(1), clientData.get(0).get(2));
                     case "signout" -> SignOut();
                     case "timeline" -> Timeline();
                     case "users" -> UsersToFollow();
@@ -79,10 +76,7 @@ public class ClientHandler extends Thread {
         }
         catch (IOException | ClassNotFoundException e) { e.printStackTrace(); }
         finally {
-            try {
-                clientSocket.close();
-                forClient.flush();
-            }
+            try { clientSocket.close(); }
             catch (IOException e) { e.printStackTrace(); }
         }
     }
@@ -150,7 +144,7 @@ public class ClientHandler extends Thread {
     }
 
     /**
-     * TODO implement a password check to make sure it satisfies some requirements ie. 8 letters long
+     * TODO add a name to jabber user in the database and add adding it to the method
      * TODO if the username already exists they shouldn't be able to register with it
      * Adds the user's username to the database and logs them in.
      * The log in takes the form of initializing the global variables user and userID
@@ -159,16 +153,8 @@ public class ClientHandler extends Thread {
      */
     private void RegisterUser(final String username, final String password) throws IOException {
         //add user to the database
-        ArrayList<ArrayList<String>> currentUsers = db.getUsers();
-        boolean exists = false;
-        for (ArrayList<String> userInfo : currentUsers) {
-            if (userInfo.get(1).equals(username)) {
-                exists = true;
-                break;
-            }
-        }
-        if (exists) forClient.writeObject(new JabberMessage("invalid-username"));
-        else if (!validatePW(password)) forClient.writeObject(new JabberMessage("invalid-password"));
+        if (usernameExists(username)) forClient.writeObject(new JabberMessage("invalid-username"));
+        else if (!validPW(password)) forClient.writeObject(new JabberMessage("invalid-password"));
         else { // Username doesn't exist already and the password is valid
             String email = username + "@gmail.com"; //create user email
             db.addUser(username, password, email); //add user to the database
@@ -178,8 +164,18 @@ public class ClientHandler extends Thread {
 
             forClient.writeObject(new JabberMessage("signedin"));
         }
-
         forClient.flush();
+    }
+
+    /**
+     * Checking if the username already exists in the database
+     * @param username new username that the user wants to use
+     * @return true if the username exists, false if it doesn't
+     */
+    private boolean usernameExists(final String username) {
+        ArrayList<ArrayList<String>> currentUsers = db.getUsers();
+        for (ArrayList<String> userInfo : currentUsers) { if (userInfo.get(1).equals(username)) { return true; } }
+        return false;
     }
 
     /**
@@ -187,11 +183,11 @@ public class ClientHandler extends Thread {
      * @param password password that the user is signing up with
      * @return true if password is valid and false otherwise
      */
-    private boolean validatePW(final String password) {
+    private boolean validPW(final String password) {
         if (password.length() < 5) return false;
         for (char c : password.toCharArray()) {
-            if (Character.isDigit(c)) break;
             if (Character.isSpaceChar(c)) return false;
+            else if (Character.isDigit(c)) break;
         }
         return true;
     }
