@@ -1,7 +1,8 @@
 import java.io.*;
 import java.net.Socket;
 import java.util.ArrayList;
-// FIXME get rid of EOF exception - you need to do .close() somewhere
+
+// FIXME get rid of EOF exception
 
 public class ClientHandler extends Thread {
     private final JabberDatabase db;
@@ -57,21 +58,22 @@ public class ClientHandler extends Thread {
                 //separate the command 'post' from the jab text
                 switch (command) {
                     case "signin" -> SignIn(info, message[2]);
-                    case "register" -> RegisterUser(info, message[2]);
+                    case "register" -> {
+                        StringBuilder possiblePassword = new StringBuilder();
+                        for (int i = 1; i < message.length; i++) possiblePassword.append(message[i]).append(" ");
+                        RegisterUser(info, possiblePassword.toString());
+                    }
                     case "signout" -> SignOut();
                     case "timeline" -> Timeline();
                     case "users" -> UsersToFollow();
                     case "like" -> LikeJab(info);
                     case "follow" -> FollowUser(info);
                     case "post" -> {
-                                StringBuilder jabText = new StringBuilder(); //stringBuilder to store the jab text
-
-                                //separate the command 'post' from the jab text and add spaces
-                                for (int i = 1; i < message.length; i++) jabText.append(message[i]).append(" ");
-
-                                PostJab(jabText.toString());
-                            }
-
+                        StringBuilder jabText = new StringBuilder(); //stringBuilder to store the jab text
+                        //separate the command 'post' from the jab text and add spaces
+                        for (int i = 1; i < message.length; i++) jabText.append(message[i]).append(" ");
+                        PostJab(jabText.toString());
+                    }
                 }
             }
         }
@@ -124,7 +126,7 @@ public class ClientHandler extends Thread {
      * Provides an arraylist of users not followed by the logged in user
      */
     private void UsersToFollow() throws IOException {
-        ArrayList<ArrayList<String>> usersNotFollowed = db.getUsersNotFollowed(getUserID()); //get the list of users not followed
+        ArrayList<ArrayList<String>> usersNotFollowed = db.getUsersNotFollowed(getUserID()); //list of users not followed
         forClient.writeObject(new JabberMessage("users", usersNotFollowed));
         forClient.flush();
     }
@@ -157,15 +159,41 @@ public class ClientHandler extends Thread {
      */
     private void RegisterUser(final String username, final String password) throws IOException {
         //add user to the database
-        String email = username + "@gmail.com"; //create user email
-        db.addUser(username, password, email); //add user to the database
+        ArrayList<ArrayList<String>> currentUsers = db.getUsers();
+        boolean exists = false;
+        for (ArrayList<String> userInfo : currentUsers) {
+            if (userInfo.get(1).equals(username)) {
+                exists = true;
+                break;
+            }
+        }
+        if (exists) forClient.writeObject(new JabberMessage("invalid-username"));
+        else if (!validatePW(password)) forClient.writeObject(new JabberMessage("invalid-password"));
+        else { // Username doesn't exist already and the password is valid
+            String email = username + "@gmail.com"; //create user email
+            db.addUser(username, password, email); //add user to the database
+            //initialize global variables
+            setUser(username);
+            setUserID(db.getUserID(username));
 
-        //initialize global variables
-        setUser(username);
-        setUserID(db.getUserID(username));
+            forClient.writeObject(new JabberMessage("signedin"));
+        }
 
-        forClient.writeObject(new JabberMessage("signedin"));
         forClient.flush();
+    }
+
+    /**
+     * Checks if the password satisfies the requirements: longer than or equal to 5, has a digit, doesn't have spaces
+     * @param password password that the user is signing up with
+     * @return true if password is valid and false otherwise
+     */
+    private boolean validatePW(final String password) {
+        if (password.length() < 5) return false;
+        for (char c : password.toCharArray()) {
+            if (Character.isDigit(c)) break;
+            if (Character.isSpaceChar(c)) return false;
+        }
+        return true;
     }
 
     /**

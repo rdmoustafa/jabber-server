@@ -376,6 +376,27 @@ public class JabberDatabase {
     }
 
     /**
+     * Gets all the users currently registered in the database
+     * Data is returned as a list of [userid, username]
+     * @return all the users as an array list of array lists
+     */
+    public ArrayList<ArrayList<String>> getUsers() {
+        ArrayList<ArrayList<String>> allUsers = new ArrayList<>();
+        try {
+            PreparedStatement stmt = conn.prepareStatement("select userid, username from jabberuser");
+
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                ArrayList<String> user = new ArrayList<>();
+                user.add(rs.getObject("userid").toString());
+                user.add(rs.getObject("username").toString());
+                allUsers.add(user);
+            }
+        }
+        catch (SQLException e) { e.printStackTrace(); }
+        return allUsers;
+    }
+    /**
      * A convenience method to get the userid of the user with user name username.
      * @param username the username of the user.
      * @return the userid of the user.
