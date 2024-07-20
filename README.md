@@ -1,4 +1,4 @@
-# Jabber Backend
+# Jabber Server
 
 This project is the backend for the Jabber social media application. It is implemented in Java and provides the necessary features to support user management, message posting, and liking messages.
 
@@ -24,8 +24,8 @@ This project is the backend for the Jabber social media application. It is imple
 
 1. **Clone the repository:**
     ```bash
-    git clone https://github.com/yourusername/jabber-backend.git
-    cd jabber-backend
+    git clone https://github.com/rdmoustafa/jabber-server.git
+    cd jabber-server
     ```
 
 2. **Set up the database:**
@@ -47,4 +47,4 @@ This project is licensed under the MIT License.
 
 ---
 
-Thank you for checking out the Jabber Backend project!
+Thank you for checking out the Jabber Server project!
